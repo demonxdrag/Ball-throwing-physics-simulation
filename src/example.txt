@@ -1,0 +1,21 @@
+1. Initialize the Simulator
+    a. Define Constants
+        - MOTOR_TORQUE = 2 NM
+        - MOTOR_SPEED = 20 radians/second
+        - GRAVITY = 9.8 m/s^2
+    b. Define Simulator Parameters
+        - Starting Angle
+        - Motor Torque
+        - Ball Release Angle
+        - Ball Weight
+
+2. Define Functions
+    a. calculateLaunchDistance(startingAngle, motorTorque, ballReleaseAngle)
+        - Calculate launch distance based on input parameters
+        - Use physics equations to model ball trajectory
+        - Return launch distance
+
+
+REMEMBER: 
+- These are only for guidance, you are free to be creative, create new structures, variables, functions and a GUI to your liking.
+- Please provide some way to interact with your simulator. 
