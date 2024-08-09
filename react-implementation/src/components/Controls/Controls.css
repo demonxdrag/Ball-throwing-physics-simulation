@@ -3,6 +3,11 @@
     text-align: center;
     padding: 20px;
     width: 200px;
+    background-color: #313131;
+    border-radius: 10px;
+    border: 1px solid #313131;
+    color: white;
+    flex-basis: 200px;
 }
 
 .inputs {

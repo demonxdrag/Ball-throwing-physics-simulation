@@ -3,7 +3,7 @@ import './App.css'
 import React, { useState } from 'react'
 
 import Controls from './components/Controls/Controls'
-import PlotComponent from './components/PlotComponent'
+import FunctionPlotComponent from './components/FunctionPlotComponent'
 
 const App: React.FC = () => {
 	const [initialAngle, setInitialAngle] = useState<number>(45)
@@ -22,11 +22,7 @@ const App: React.FC = () => {
 					setMotorTorque={setMotorTorque}
 					setReleaseAngle={setReleaseAngle}
 				/>
-				<PlotComponent
-					initialAngle={initialAngle}
-					motorTorque={motorTorque}
-					releaseAngle={releaseAngle}
-				/>
+				<FunctionPlotComponent initialAngle={initialAngle} motorTorque={motorTorque} releaseAngle={releaseAngle} />
 			</div>
 		</div>
 	)
