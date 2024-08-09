@@ -21,31 +21,44 @@ const FunctionPlotComponent: React.FC<PlotProps> = ({ initialAngle, motorTorque,
 		const releaseAngleRad = (releaseAngle * Math.PI) / 180
 
 		// Constants
-		const rodLength = config.rodLength / 10 // cm
+		const motorMaxSpeed = config.motorMaxSpeed
 		const gravity = config.gravity * 100 // Convert from m/s^2 to cm/s^2
 
-		// Calculate initial velocity
-		const motorMaxSpeed = config.motorMaxSpeed
+		const rodLength = config.rodLength / 10 // cm
 		const rodRadius = config.rodWidth / 20 // cm
 		const rodWeight = Math.PI * rodRadius ** 2 * rodLength * config.rodDensity // g
+
 		const ballRadius = config.ballWidth / 20 // cm
 		const ballWeight = ((4 * Math.PI * ballRadius ** 3) / 3) * config.ballDensity // g
 
+		const pivotRatio = 0.15 // 15% of the rod length
+		const rodDistanceBeforePivot = rodLength * pivotRatio
+		const rodDistanceFromPivotToCenterOfMass = rodLength / 2 - rodDistanceBeforePivot
+		const rodDistanceAfterPivot = rodLength - rodDistanceBeforePivot
+		const ballDistanceToPivot = rodDistanceAfterPivot - ballRadius
+
+		// Change g to kg
 		const rodWeightKg = rodWeight / 1000
 		const ballWeightKg = ballWeight / 1000
-		const I_rod = ((1 / 3) * rodWeightKg * rodLength) ** 2
-		const I_ball = (ballWeightKg * rodLength) ** 2
-		const I_total = I_rod + I_ball
+
+		// Calculate moments of inertia around the pivot point
+		// const IRod = (1 / 3) * rodWeightKg * rodDistanceAfterPivot ** 2 + rodWeightKg * rodDistanceBeforePivot ** 2
+		const IRodCenter = (1 / 12) * rodWeightKg * rodLength ** 2
+		const IRod = IRodCenter + rodWeightKg * rodDistanceFromPivotToCenterOfMass ** 2
+		const IBallCenter = (2 / 5) * ballWeightKg * ballRadius ** 2
+		const IBall = IBallCenter + ballWeightKg * ballDistanceToPivot ** 2
+
+		const ITotal = IRod + IBall
 
 		const angleDirection = initialAngle > releaseAngle ? -1 : 1
 		const angleDeltaRad = (angleDirection * (releaseAngle - initialAngle) * Math.PI) / 180
-		const angularSpeedAtRelease = angleDirection * Math.sqrt((2 * motorTorque * angleDeltaRad) / I_total)
+		const angularSpeedAtRelease = angleDirection * Math.sqrt((2 * motorTorque * angleDeltaRad) / ITotal)
 		const angularSpeed = Math.min(angularSpeedAtRelease, motorMaxSpeed)
 
 		const floorDistance = config.floor / 10 // cm
 
 		// Adjust velocity for release angle perpendicular to the rod
-		const releaseVelocity = angularSpeed * rodLength // cm/s
+		const releaseVelocity = angularSpeed * ballDistanceToPivot // cm/s
 		const v = {
 			x: releaseVelocity * Math.sin(releaseAngleRad), // Horizontal component of velocity
 			y: releaseVelocity * Math.cos(releaseAngleRad) // Vertical component of velocity
@@ -53,16 +66,16 @@ const FunctionPlotComponent: React.FC<PlotProps> = ({ initialAngle, motorTorque,
 
 		// Release position of the ball
 		const releasePosition = {
-			x: rodLength * Math.cos(releaseAngleRad),
-			y: rodLength * Math.sin(releaseAngleRad)
+			x: ballDistanceToPivot * Math.cos(releaseAngleRad),
+			y: ballDistanceToPivot * Math.sin(releaseAngleRad)
 		}
 
 		// Time of flight to hit the floor
-		const a = -0.5 * gravity
-		const b = v.y
-		const c = releasePosition.y - floorDistance
+		const g = -0.5 * gravity
+		const Vy = v.y
+		const d = releasePosition.y - floorDistance
 
-		const discriminant = b * b - 4 * a * c
+		const discriminant = Vy * Vy - 4 * g * d
 		if (discriminant < 0) {
 			console.log('No real roots for the time of flight equation.')
 			setResult(0)
@@ -70,8 +83,8 @@ const FunctionPlotComponent: React.FC<PlotProps> = ({ initialAngle, motorTorque,
 		}
 
 		const sqrtDiscriminant = Math.sqrt(discriminant)
-		const t1 = (-b + sqrtDiscriminant) / (2 * a)
-		const t2 = (-b - sqrtDiscriminant) / (2 * a)
+		const t1 = (-Vy + sqrtDiscriminant) / (2 * g)
+		const t2 = (-Vy - sqrtDiscriminant) / (2 * g)
 		const timeOfFlight = Math.max(t1, t2) // Choose the positive root
 
 		// Calculate traveled distance in X axis
@@ -101,32 +114,57 @@ const FunctionPlotComponent: React.FC<PlotProps> = ({ initialAngle, motorTorque,
 					graphType: 'polyline',
 					color: 'blue'
 				},
-				// Initial Rod at the initial angle
+				// Rod at the initial angle
 				{
-					x: `t * ${(rodLength * Math.cos(initialAngleRad)) / rodLength}`,
-					y: `t * ${(rodLength * Math.sin(initialAngleRad)) / rodLength}`,
+					x: `t * ${(rodDistanceAfterPivot * Math.cos(initialAngleRad)) / rodDistanceAfterPivot}`,
+					y: `t * ${(rodDistanceAfterPivot * Math.sin(initialAngleRad)) / rodDistanceAfterPivot}`,
 					fnType: 'parametric',
 					graphType: 'polyline',
-					range: [0, rodLength],
+					range: [0, rodDistanceAfterPivot],
 					color: 'gray'
 				},
-				// Release Rod at the release angle
 				{
-					x: `t * ${(rodLength * Math.cos(releaseAngleRad)) / rodLength}`,
-					y: `t * ${(rodLength * Math.sin(releaseAngleRad)) / rodLength}`,
+					x: `-t * ${(rodDistanceBeforePivot * Math.cos(initialAngleRad)) / rodDistanceBeforePivot}`,
+					y: `-t * ${(rodDistanceBeforePivot * Math.sin(initialAngleRad)) / rodDistanceBeforePivot}`,
 					fnType: 'parametric',
 					graphType: 'polyline',
-					range: [0, rodLength],
+					range: [0, rodDistanceBeforePivot],
+					color: 'gray'
+				},
+				// Rod at the release angle
+				{
+					x: `t * ${(rodDistanceAfterPivot * Math.cos(releaseAngleRad)) / rodDistanceAfterPivot}`,
+					y: `t * ${(rodDistanceAfterPivot * Math.sin(releaseAngleRad)) / rodDistanceAfterPivot}`,
+					fnType: 'parametric',
+					graphType: 'polyline',
+					range: [0, rodDistanceAfterPivot],
+					color: 'black'
+				},
+				{
+					x: `-t * ${(rodDistanceBeforePivot * Math.cos(releaseAngleRad)) / rodDistanceBeforePivot}`,
+					y: `-t * ${(rodDistanceBeforePivot * Math.sin(releaseAngleRad)) / rodDistanceBeforePivot}`,
+					fnType: 'parametric',
+					graphType: 'polyline',
+					range: [0, rodDistanceBeforePivot],
 					color: 'black'
 				},
 				// Circular Path
 				{
-					x: `${rodLength} * cos(t)`,
-					y: `${rodLength} * sin(t)`,
+					x: `${ballDistanceToPivot} * cos(t)`,
+					y: `${ballDistanceToPivot} * sin(t)`,
 					fnType: 'parametric',
 					graphType: 'polyline',
 					range: [0, 2 * Math.PI],
 					color: 'gray'
+				},
+				// Ball
+				{
+					x: `${releasePosition.x} + ${ballRadius} * cos(t)`,
+					y: `${releasePosition.y} + ${ballRadius} * sin(t)`,
+					fnType: 'parametric',
+					graphType: 'polyline',
+					color: 'blue',
+					closed: true
 				},
 				// Floor
 				{

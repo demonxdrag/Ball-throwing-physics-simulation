@@ -3,7 +3,14 @@ My logic on solving this problems goes as follows:
 The first step is to know the properties of the elements in the system, considering the material properties and dimensions I can get the weight of both the ball and the rod by applying the following formula:
 
 ```
+M(rod) = π * R^2 * L * D
+R = Rod Radius
+L = Rod Length
+D = Rod Density in g/cm^3
 
+M(ball) = ((4 * π * R^3) / 3) * D
+R = Ball Radius
+D = Ball Density in g/cm^3
 ```
 
 I made this simpler by implementing a parameter in the code that calculates the weight using the density, this way we can change the materials at any point to achieve different results.
@@ -11,25 +18,32 @@ I made this simpler by implementing a parameter in the code that calculates the 
 The weight is important in this case to calculate the inertia of each element. I did this by applying the following formula
 
 ```
+Rod Moment Of Inertia
+I(center) = (1 / 12) * M * L^2
+I(pivot) = I(center) + M * d^2
+M = Rod's Mass
+L = Rod's Length
+d = Pivot point's distance to the center of mass (L/2)
 
+Ball Moment Of Inertia
+I(center) = (2 / 5) * M * R^2
+I(pivot) = I(center) + M * d^2
+M = Ball's Mass
+R = Ball's Radius
+d = Pivot point's distance to the center of mass (L/2) considering the radius of the ball too (d-r)
 ```
-
-Note that since the rod's point of rotation is not in an extreme there are forces cancelling each other with regards to gravity. This explains why I'm using a ratio instead of the full length.
 
 Other properties such as tensile strenght or elasticity I considered to be negligible in this case due to the imbalanced nature of the system and the flex [TODOTODOTODO]
 
 Once I have the moment of innertia of the system I can calculate the rotational velocity of the system and extrapolate the velocity at the ball's position at the release moment.
 
 ```
-
+sqrt((2 * T * D0) / I(total))
+T = Motor Torque in NM
+D0 = Delta between the initial and release angle
 ```
 
-After this the forces affecting the system would be gravity and air resistance (assuming non-moving air).
-
-We can apply this forces using these set of formulas
-```
-
-```
+Since the system has a fixed maximum velocity, the simulator chooses the minimum between the rotational speed and the maximum speed in rad/s.
 
 Finally the system needs to stop whenever it reaches either a "floor" or a "wall". Since it was not specified in the requirements document, these are a parameter for the user to control when using the system.
 The final distance calculation would be whichever surface it hits first.
