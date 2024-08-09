@@ -11,9 +11,9 @@ export const config = {
 	floor: -500, // mm
 	// Motor
 	motorTorque: 2, // Nm
-	motorMaxSpeed: 2000, // radians/s
+	motorMaxSpeed: 20, // radians/s
 	// Generic
-	initialAngle: 45,
+	initialAngle: 1,
 	releaseAngle: 90,
-	gravity: 9.81 // cm/s^2
+	gravity: 9.81 // m/s^2
 }
