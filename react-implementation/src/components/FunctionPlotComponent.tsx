@@ -167,7 +167,7 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 				}
 			]
 		})
-	}, [initialAngle, motorTorque, releaseAngle])
+	}, [initialAngle, motorTorque, releaseAngle, motorMaxSpeed])
 
 	return (
 		<div>

@@ -11,7 +11,7 @@ type ControlsProps = {
 	setMotorMaxSpeed: (speed: number) => void
 }
 const Controls = (props: ControlsProps) => {
-	const { initialAngle, setInitialAngle, motorTorque, setMotorTorque, releaseAngle, setReleaseAngle } = props
+	const { initialAngle, setInitialAngle, motorTorque, setMotorTorque, releaseAngle, setReleaseAngle, motorMaxSpeed, setMotorMaxSpeed } = props
 	return (
 		<div className='Controls'>
 			<div className='inputs'>
@@ -39,7 +39,7 @@ const Controls = (props: ControlsProps) => {
 				<label>
 					Motor Maximum Speed:
 					<div>
-						<input type='number' value={motorTorque} onChange={e => setMotorTorque(Number(e.target.value))} />
+						<input type='number' value={motorMaxSpeed} onChange={e => setMotorMaxSpeed(Number(e.target.value))} />
 						<div className='unit'>rad/s</div>
 					</div>
 				</label>
