@@ -74,6 +74,16 @@ Where
 - v[x,y]: velocity vector
 - g: gravity
 
+When taking into consideration air drag we need to update our formula to:
+```
+x(t) = (v[x] / ß) * (1 - e^(-ß * t))
+y(t) = (v[y] + g / ß / ß) * ((1 - e^(-ß * t)) - (g * t) / ß)
+```
+Where `ß` is the drag of the ball and it's calculated by:
+```
+(1/2 * dragCoefficient * airDensity * ballArea) / ballWeight
+```
+
 With this formula I can plot the graph however I still need to find an intersection point between the ball's path and the floor, for that I can use `y=floor` and extract `t` from our `y(t)` formula:
 ```
 (v[y] + sqrt(v[y]^2 + 2 * g * d)) / g

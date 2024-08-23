@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import { config } from '../config/config'
 import functionPlot from 'function-plot'
+import { config } from '../config/config'
 
 interface PlotProps {
 	initialAngle: number
@@ -12,7 +12,7 @@ interface PlotProps {
 
 const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 	const plotRef = useRef<HTMLDivElement>(null)
-  const { initialAngle, releaseAngle, motorTorque, motorMaxSpeed } = props
+	const { initialAngle, releaseAngle, motorTorque, motorMaxSpeed } = props
 	const [result, setResult] = useState<number>(0)
 
 	useEffect(() => {
@@ -24,13 +24,16 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 
 		// Constants
 		const gravity = config.gravity
-
+		const airDensity = config.airDensity // kg/m^3
+		const dragCoefficient = config.dragCoefficient // Sphere
 		const rodLength = config.rodLength / 1000 // m
 		const rodRadius = config.rodWidth / 2000 // m
 		const rodWeight = Math.PI * (rodRadius * 100) ** 2 * (rodLength * 100) * config.rodDensity // g
 
 		const ballRadius = config.ballWidth / 2000 // m
-		const ballWeight = ((4 * Math.PI * (ballRadius * 100) ** 3) / 3) * config.ballDensity // g
+		const ballCrossSectionalArea = Math.PI * ballRadius ** 2 // m^2
+		const ballVolume = (4 / 3) * Math.PI * (ballRadius * 100) ** 3 // cm^3
+		const ballWeight = ballVolume * config.ballDensity // g
 
 		const pivotRatio = 0.15 // 15% of the rod length
 		const rodDistanceBeforePivot = rodLength * pivotRatio
@@ -42,6 +45,9 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 		const rodWeightKg = rodWeight / 1000
 		const ballWeightKg = ballWeight / 1000
 
+		// Drag coefficient
+		const drag = (0.5 * dragCoefficient * airDensity * ballCrossSectionalArea) / ballWeightKg // N
+
 		// Calculate moments of inertia around the pivot point
 		const IRodCenter = (rodWeightKg * rodRadius ** 2) / 4 + (1 / 12) * rodWeightKg * rodLength ** 2
 		const IRod = IRodCenter + rodWeightKg * rodDistanceFromPivotToCenterOfMass ** 2
@@ -49,12 +55,6 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 		const IBall = IBallCenter + ballWeightKg * ballDistanceToPivot ** 2
 
 		const ITotal = IRod + IBall
-
-		// Since this works as as function of an angle, we would need to manually calculate the Torque for each angle
-		const TRod = -rodWeightKg * gravity * rodDistanceFromPivotToCenterOfMass
-		const TBall = -ballWeightKg * gravity * ballDistanceToPivot
-		const TTotal = TRod + TBall
-		// Not in use
 
 		const angleDirection = initialAngle > releaseAngle ? -1 : 1
 		const angleDeltaRad = (angleDirection * (releaseAngle - initialAngle) * Math.PI) / 180
@@ -78,8 +78,12 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 		}
 
 		// Time of Flight to hit the floor
+		const dragForce = 0.5 * dragCoefficient * airDensity * ballCrossSectionalArea * Math.sqrt(v.x ** 2 + v.y ** 2)
+		const dragAcceleration = dragForce / ballWeightKg;
+		const adjustedTimeFactor = 1 + (dragAcceleration / gravity) * 0.5; // Rough estimate
 		const d = releasePosition.y - floorDistance
 		const timeOfFlight = (v.y + Math.sqrt(v.y ** 2 + 2 * gravity * d)) / gravity
+		const timeOfFlightDrag = (v.y + Math.sqrt(v.y ** 2 + 2 * gravity * d)) / (gravity * adjustedTimeFactor);
 
 		// Calculate traveled distance in X axis
 		const traveledDistanceX = releasePosition.x - v.x * timeOfFlight
@@ -91,6 +95,9 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 		const yMin = Math.min(-rodLength * 2, floorDistance) - 1
 		const yMax = Math.max(rodLength * 2, -floorDistance) + 1
 
+		// Simplify calculations that don't depend on t
+		const vDrag = { x: v.x / drag, y: (v.y + gravity / drag) / drag }
+
 		// Set up the function plot
 		functionPlot({
 			target: plotRef.current,
@@ -100,14 +107,27 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 			yAxis: { label: 'Y (m)', domain: [yMin, yMax] },
 			grid: true,
 			data: [
-				// Ball's projectile path as a parametric equation starting from release position
+				// Ball's projectile path as a parametric equation starting from release position with air drag
+				{
+					// x: `${releasePosition.x} - t * ${v.x}`,
+					// y: `${releasePosition.y} + ${v.y} * t - 0.5 * ${gravity} * t^2`,
+					x: `${releasePosition.x} - ${vDrag.x} * (1 - exp(-${drag} * t))`,
+					y: `${releasePosition.y} + (${vDrag.y} * (1 - exp(-${drag} * t)) - (${gravity} * t) / ${drag})`,
+					fnType: 'parametric',
+					graphType: 'polyline',
+					range: [0, timeOfFlightDrag],
+					color: 'blue'
+				},
+				// Ball's projectile path as a parametric equation starting from release position without drag
 				{
 					x: `${releasePosition.x} - t * ${v.x}`,
 					y: `${releasePosition.y} + ${v.y} * t - 0.5 * ${gravity} * t^2`,
+					// x: `${releasePosition.x} - ${vDrag.x} * (1 - exp(-${drag} * t))`,
+					// y: `${releasePosition.y} + (${vDrag.y} * (1 - exp(-${drag} * t)) - (${gravity} * t) / ${drag})`,
 					fnType: 'parametric',
 					graphType: 'polyline',
 					range: [0, timeOfFlight],
-					color: 'blue'
+					color: 'gray'
 				},
 				// Rod at the initial angle
 				{
@@ -172,7 +192,7 @@ const FunctionPlotComponent: React.FC<PlotProps> = (props: PlotProps) => {
 	return (
 		<div>
 			<div ref={plotRef}></div>
-			<div className='result'>Traveled distance to floor: {result.toFixed(2)} m</div>
+			<div className='result'>Traveled distance to floor: {result} m</div>
 		</div>
 	)
 }

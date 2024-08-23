@@ -15,5 +15,7 @@ export const config = {
 	// Generic
 	initialAngle: 1,
 	releaseAngle: 90,
-	gravity: 9.81 // m/s^2
+	gravity: 9.81, // m/s^2
+	airDensity: 1.225, // kg/m^3
+	dragCoefficient: 0.47 // Sphere
 }
