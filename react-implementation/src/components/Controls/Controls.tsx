@@ -2,16 +2,52 @@ import './Controls.css'
 
 type ControlsProps = {
 	initialAngle: number
-	setInitialAngle: (angle: number) => void
+	setInitialAngle: React.Dispatch<React.SetStateAction<number>>
 	releaseAngle: number
-	setReleaseAngle: (angle: number) => void
+	setReleaseAngle: React.Dispatch<React.SetStateAction<number>>
 	motorTorque: number
-	setMotorTorque: (torque: number) => void
+	setMotorTorque: React.Dispatch<React.SetStateAction<number>>
 	motorMaxSpeed: number
-	setMotorMaxSpeed: (speed: number) => void
+	setMotorMaxSpeed: React.Dispatch<React.SetStateAction<number>>
+	controls: {
+		play: boolean
+		reset: boolean
+	}
+	setControls: React.Dispatch<
+		React.SetStateAction<{
+			play: boolean
+			reset: boolean
+		}>
+	>
 }
 const Controls = (props: ControlsProps) => {
-	const { initialAngle, setInitialAngle, motorTorque, setMotorTorque, releaseAngle, setReleaseAngle, motorMaxSpeed, setMotorMaxSpeed } = props
+	const {
+		initialAngle,
+		setInitialAngle,
+		motorTorque,
+		setMotorTorque,
+		releaseAngle,
+		setReleaseAngle,
+		motorMaxSpeed,
+		setMotorMaxSpeed,
+		controls,
+		setControls
+	} = props
+
+	const handlePlayPause = () => {
+		setControls(previousControls => {
+			if (previousControls.reset) {
+				return { play: true, reset: false }
+			} else {
+				return { play: !previousControls.play, reset: false }
+			}
+		})
+	}
+
+	const handleReset = () => {
+		setControls({ play: false, reset: true })
+	}
+
 	return (
 		<div className='Controls'>
 			<div className='inputs'>
@@ -43,6 +79,8 @@ const Controls = (props: ControlsProps) => {
 						<div className='unit'>rad/s</div>
 					</div>
 				</label>
+				<button onClick={handlePlayPause}>{controls.play ? 'Pause' : 'Play'}</button>
+				<button onClick={handleReset}>Reset</button>
 			</div>
 		</div>
 	)
