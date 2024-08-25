@@ -3,6 +3,7 @@ import './App.css'
 import React, { useState } from 'react'
 
 import Controls from './components/Controls/Controls'
+import FunctionPlotComponent from './components/FunctionPlotComponent'
 import ThreePlotComponent from './components/ThreePlotComponent/ThreePlotComponent'
 import { config } from './config/config'
 
@@ -11,7 +12,7 @@ const App: React.FC = () => {
 	const [releaseAngle, setReleaseAngle] = useState<number>(config.releaseAngle)
 	const [motorTorque, setMotorTorque] = useState<number>(config.motorTorque)
 	const [motorMaxSpeed, setMotorMaxSpeed] = useState<number>(config.motorMaxSpeed)
-	const [controls, setControls] = useState<{ play: boolean; reset: boolean }>({ play: false, reset: true })
+	const [controls, setControls] = useState<{ play: boolean; reset: boolean; speed: number }>({ play: false, reset: true, speed: 1 })
 
 	return (
 		<div className='App'>
@@ -29,7 +30,14 @@ const App: React.FC = () => {
 					setMotorMaxSpeed={setMotorMaxSpeed}
 					setControls={setControls}
 				/>
-				<ThreePlotComponent initialAngle={initialAngle} releaseAngle={releaseAngle} motorTorque={motorTorque} motorMaxSpeed={motorMaxSpeed} controls={controls}/>
+				<ThreePlotComponent
+					initialAngle={initialAngle}
+					releaseAngle={releaseAngle}
+					motorTorque={motorTorque}
+					motorMaxSpeed={motorMaxSpeed}
+					controls={controls}
+				/>
+				<FunctionPlotComponent initialAngle={initialAngle} releaseAngle={releaseAngle} motorTorque={motorTorque} motorMaxSpeed={motorMaxSpeed} />
 			</div>
 		</div>
 	)

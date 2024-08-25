@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Mesh, Vector3 } from 'three'
-import React, { useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { config } from '../../config/config'
 
@@ -12,14 +12,15 @@ interface ThreePlotComponentProps {
 	controls?: {
 		play: boolean
 		reset: boolean
+		speed: number
 	}
 }
 
 const ThreePlotComponent: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAngle, motorTorque, motorMaxSpeed, controls }) => {
 	const floorDistance = config.floor / 1000 // m
+
 	return (
-		<Canvas camera={{ position: [0, floorDistance, 0.6], rotation: [0, 0, 0], fov: 50 }} style={{ width: '800px', height: '600px' }}>
-			{/* <CameraControls /> */}
+		<Canvas camera={{ position: [0, floorDistance - 0.1, 1], rotation: [0, 0, 0], fov: 50 }} style={{ width: '600px', height: '600px' }}>
 			<gridHelper />
 			<ambientLight intensity={Math.PI / 2} />
 			<spotLight position={[1, 1, 1]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
@@ -29,9 +30,16 @@ const ThreePlotComponent: React.FC<ThreePlotComponentProps> = ({ initialAngle, r
 	)
 }
 
-const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAngle, motorTorque, motorMaxSpeed, controls = { play: false, reset: true } }) => {
-	const rodRef = useRef<Mesh>(null)
+const RodAndBall: React.FC<ThreePlotComponentProps> = ({
+	initialAngle,
+	releaseAngle,
+	motorTorque,
+	motorMaxSpeed,
+	controls = { play: false, reset: true, speed: 1 }
+}) => {
 	const ballRef = useRef<Mesh>(null)
+	const rodRef = useRef<Mesh>(null)
+	const rodReleaseRef = useRef<Mesh>(null)
 
 	// Constants
 	const initialAngleRad = (initialAngle * Math.PI) / 180
@@ -75,7 +83,7 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 
 	const ITotal = IRod + IBall
 
-	const target = -floorDistance + ballRadius
+	const target = ballRadius
 
 	const phaseRef = useRef<number>(1)
 	const angularSpeedRef = useRef<number>(0)
@@ -83,9 +91,23 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 	const torqueRef = useRef<number>(motorTorque)
 	const velocityRef = useRef<Vector3>(new Vector3(0, 0, 0))
 
+	useEffect(() => {
+		if (rodReleaseRef.current) {
+			const offsetRodPosition = rodLength / 2 - rodDistanceBeforePivot
+			const rodX = -offsetRodPosition * Math.sin(releaseAngleRad)
+			const rodY = offsetRodPosition * Math.cos(releaseAngleRad)
+			rodReleaseRef.current.rotation.z = releaseAngleRad
+			rodReleaseRef.current.position.set(rodX, rodY + floorDistance, 0)
+		}
+	}, [releaseAngleRad])
+
+	useEffect(() => {
+		torqueRef.current = Math.sign(torqueRef.current) * motorTorque
+	}, [motorTorque])
+
 	useFrame((state, t) => {
 		// Having a consistent frame duration is important for the simulation since we need enough precision to avoid missing critical events
-		const ti = 0.0165 // this value comes from averaging t
+		const ti = 0.0165 * controls.speed // this value comes from averaging t
 
 		if (controls.play === true) {
 			/**
@@ -149,13 +171,6 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 					torqueRef.current = -motorTorque
 					phaseRef.current = 2
 
-					// Calculate angular speed
-					const angularSpeed = angularSpeedRef.current * Math.cos(angleRef.current)
-
-					// Adjust velocity for release angle perpendicular to the rod
-					const releaseVelocity = angularSpeed * ballDistanceToPivot // m/s
-					velocityRef.current = new Vector3(-releaseVelocity * Math.cos(angleRef.current), -releaseVelocity * Math.sin(angleRef.current), 0)
-
 					// Update the system to be at the release angle
 					// This is a consistency measure since t could make the ball miss the target position
 					// Rotate the rod over the pivot point
@@ -170,6 +185,10 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 						const ballX = -ballDistanceToPivot * Math.sin(angleRef.current) - ballRadius * 2 * Math.cos(angleRef.current)
 						const ballY = ballDistanceToPivot * Math.cos(angleRef.current) - ballRadius * 2 * Math.sin(angleRef.current)
 						ballRef.current.position.set(ballX, ballY + floorDistance, 0)
+
+						// Adjust velocity for release angle perpendicular to the rod
+						const releaseVelocity = angularSpeedRef.current * ballDistanceToPivot // m/s
+						velocityRef.current = new Vector3(-releaseVelocity * Math.cos(angleRef.current), -releaseVelocity * Math.sin(angleRef.current), 0)
 					}
 				}
 			}
@@ -196,6 +215,10 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 				// Update ball position
 				if (ballRef.current) {
 					const ballPosition = ballRef.current.position.clone()
+
+					// Move the camera
+					state.camera.position.setX(state.camera.position.x + velocityRef.current.x * ti)
+					state.camera.position.setZ(Math.max(state.camera.position.z + velocityRef.current.y * ti * 2, 1))
 
 					// Apply forces to the velocity vector temporarily
 					const g = gravityForce.clone().multiplyScalar(ti)
@@ -231,6 +254,9 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 			velocityRef.current = new Vector3(0, 0, 0)
 			torqueRef.current = motorTorque
 
+			state.camera.position.setX(0)
+			state.camera.position.setZ(1)
+
 			if (rodRef.current) {
 				const offsetRodPosition = rodLength / 2 - rodDistanceBeforePivot
 				const rodX = -offsetRodPosition * Math.sin(angleRef.current)
@@ -250,16 +276,20 @@ const RodAndBall: React.FC<ThreePlotComponentProps> = ({ initialAngle, releaseAn
 	return (
 		<>
 			<mesh ref={rodRef} position={[0, 0, 0]}>
-				<cylinderGeometry args={[rodRadius, rodRadius, rodLength, 32]} />
-				<meshStandardMaterial color='lightgray' />
+				<cylinderGeometry args={[rodRadius, rodRadius, rodLength, 12]} />
+				<meshStandardMaterial color='lightgray' metalness={0.5} />
+			</mesh>
+			<mesh ref={rodReleaseRef} position={[0, 0, 0]}>
+				<cylinderGeometry args={[rodRadius, rodRadius, rodLength, 12]} />
+				<meshStandardMaterial color='lightgray' wireframe={true} />
 			</mesh>
 			<mesh ref={ballRef} position={[0, 0, 0]}>
-				<sphereGeometry args={[ballRadius, 32, 32]} />
-				<meshStandardMaterial color='darkgray' />
+				<sphereGeometry args={[ballRadius, 12, 12]} />
+				<meshStandardMaterial color='darkgray' metalness={1} />
 			</mesh>
 			{/* Base */}
 			<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorDistance, -0.004]}>
-				<cylinderGeometry args={[rodRadius / 2, rodRadius / 2, rodRadius * 4, 32]} />
+				<cylinderGeometry args={[rodRadius / 2, rodRadius / 2, rodRadius * 4, 12]} />
 				<meshStandardMaterial color='red' />
 			</mesh>
 			<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorDistance, -0.07]}>
