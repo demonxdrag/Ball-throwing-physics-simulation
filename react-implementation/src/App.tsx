@@ -13,6 +13,7 @@ const App: React.FC = () => {
 	const [motorTorque, setMotorTorque] = useState<number>(config.motorTorque)
 	const [motorMaxSpeed, setMotorMaxSpeed] = useState<number>(config.motorMaxSpeed)
 	const [controls, setControls] = useState<{ play: boolean; reset: boolean; speed: number }>({ play: false, reset: true, speed: 1 })
+	const [_3d, set3d] = useState<boolean>(true)
 
 	return (
 		<div className='App'>
@@ -24,20 +25,25 @@ const App: React.FC = () => {
 					motorTorque={motorTorque}
 					motorMaxSpeed={motorMaxSpeed}
 					controls={controls}
+					_3d={_3d}
 					setInitialAngle={setInitialAngle}
 					setReleaseAngle={setReleaseAngle}
 					setMotorTorque={setMotorTorque}
 					setMotorMaxSpeed={setMotorMaxSpeed}
 					setControls={setControls}
+					set3d={set3d}
 				/>
-				<ThreePlotComponent
-					initialAngle={initialAngle}
-					releaseAngle={releaseAngle}
-					motorTorque={motorTorque}
-					motorMaxSpeed={motorMaxSpeed}
-					controls={controls}
-				/>
-				<FunctionPlotComponent initialAngle={initialAngle} releaseAngle={releaseAngle} motorTorque={motorTorque} motorMaxSpeed={motorMaxSpeed} />
+				{_3d ? (
+					<ThreePlotComponent
+						initialAngle={initialAngle}
+						releaseAngle={releaseAngle}
+						motorTorque={motorTorque}
+						motorMaxSpeed={motorMaxSpeed}
+						controls={controls}
+					/>
+				) : (
+					<FunctionPlotComponent initialAngle={initialAngle} releaseAngle={releaseAngle} motorTorque={motorTorque} motorMaxSpeed={motorMaxSpeed} />
+				)}
 			</div>
 		</div>
 	)

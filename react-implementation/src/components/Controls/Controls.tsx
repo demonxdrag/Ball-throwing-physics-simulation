@@ -21,6 +21,8 @@ type ControlsProps = {
 			speed: number
 		}>
 	>
+	_3d: boolean
+	set3d: React.Dispatch<React.SetStateAction<boolean>>
 }
 const Controls = (props: ControlsProps) => {
 	const {
@@ -33,7 +35,9 @@ const Controls = (props: ControlsProps) => {
 		motorMaxSpeed,
 		setMotorMaxSpeed,
 		controls,
-		setControls
+		setControls,
+		_3d,
+		set3d
 	} = props
 
 	const handlePlayPause = () => {
