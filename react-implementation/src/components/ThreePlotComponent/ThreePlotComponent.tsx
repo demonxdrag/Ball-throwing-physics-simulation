@@ -258,9 +258,9 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 					if (!state) {
 						setResult(ballPosition.x)
 						setPath(pathRef.current)
-					}
-					if (targetRef.current) {
-						targetRef.current.position.setX(ballPosition.x)
+						if (targetRef.current) {
+							targetRef.current.position.setX(ballPosition.x)
+						}
 					}
 					phaseRef.current = 0
 				} else {
@@ -311,6 +311,7 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 			play(ti)
 			safety += 1
 		}
+		reset()
 		if (safety === safetyMax) {
 			setResult(0)
 		}
