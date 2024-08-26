@@ -76,8 +76,7 @@ const Controls = (props: ControlsProps) => {
 	}
 
 	const handleMotorTorque = (input: string) => {
-		let sanitized = input?.replaceAll('.', ',')
-		let value = Number(sanitized)
+		let value = Number(input)
 		if (value > 0 && !isNaN(value)) {
 			setMotorTorque(value)
 		} else {
@@ -111,11 +110,25 @@ const Controls = (props: ControlsProps) => {
 					</Stack.Item>
 					<Stack.Item>
 						<label>Motor Torque:</label>
-						<InputNumber postfix='Nm' min={0} defaultValue={motorTorque} onChange={value => handleMotorTorque(String(value))} scrollable />
+						<InputNumber
+							postfix='Nm'
+							min={0}
+							defaultValue={motorTorque}
+							onChange={value => handleMotorTorque(String(value))}
+							scrollable
+							decimalSeparator='.'
+						/>
 					</Stack.Item>
 					<Stack.Item>
 						<label>Maximum Speed:</label>
-						<InputNumber postfix='rad/s' min={0} defaultValue={motorMaxSpeed} onChange={value => handleMotorMaxSpeed(String(value))} scrollable />
+						<InputNumber
+							postfix='rad/s'
+							min={0}
+							defaultValue={motorMaxSpeed}
+							onChange={value => handleMotorMaxSpeed(String(value))}
+							scrollable
+							decimalSeparator='.'
+						/>
 					</Stack.Item>
 				</Stack>
 				{_3d && (
