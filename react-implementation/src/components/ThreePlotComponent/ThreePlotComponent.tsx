@@ -299,8 +299,14 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 	// Simulation
 	useEffect(() => {
 		const ti = 0.00001 // Higher definition for simulation
-		while (phaseRef.current > 0) {
+		const safetyMax = 1_000_000
+		let safety = 0
+		while (phaseRef.current > 0 && safety < safetyMax) {
 			play(ti)
+			safety += 1
+		}
+		if (safety === safetyMax) {
+			setResult(0)
 		}
 	}, [initialAngle, releaseAngle, motorTorque, motorMaxSpeed])
 

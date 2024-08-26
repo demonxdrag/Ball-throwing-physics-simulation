@@ -1,3 +1,4 @@
+import 'rsuite/dist/rsuite.min.css'
 import './App.css'
 
 import React, { useState } from 'react'
