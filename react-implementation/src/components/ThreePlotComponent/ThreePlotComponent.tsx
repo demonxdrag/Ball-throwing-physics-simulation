@@ -2,6 +2,7 @@ import { Canvas, RootState, useFrame } from '@react-three/fiber'
 import { Mesh, Vector3 } from 'three'
 import React, { useEffect, useRef, useState } from 'react'
 
+import { Line } from '@react-three/drei'
 import { config } from '../../config/config'
 
 interface ThreePlotComponentProps {
@@ -106,6 +107,8 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 	const angleRef = useRef<number>(initialAngleRad)
 	const torqueRef = useRef<number>(motorTorque)
 	const velocityRef = useRef<Vector3>(new Vector3(0, 0, 0))
+	const pathRef = useRef<Vector3[]>([])
+	const [path, setPath] = useState<Vector3[]>([])
 
 	useEffect(() => {
 		if (rodReleaseRef.current) {
@@ -254,6 +257,7 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 
 					if (!state) {
 						setResult(ballPosition.x)
+						setPath(pathRef.current)
 					}
 					if (targetRef.current) {
 						targetRef.current.position.setX(ballPosition.x)
@@ -264,6 +268,7 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 					velocityRef.current.add(gravityForce.multiplyScalar(ti)).add(airResistance.multiplyScalar(ti))
 					ballPosition.add(velocityRef.current.clone().multiplyScalar(ti))
 					ballRef.current.position.set(ballPosition.x, ballPosition.y, ballPosition.z)
+					pathRef.current.push(new Vector3(ballPosition.x, ballPosition.y, ballPosition.z))
 				}
 			}
 		}
@@ -275,6 +280,7 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 		phaseRef.current = 1
 		velocityRef.current = new Vector3(0, 0, 0)
 		torqueRef.current = motorTorque
+		pathRef.current = []
 
 		if (state?.camera) {
 			state.camera.position.setX(0)
@@ -340,6 +346,13 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 				<cylinderGeometry args={[rodRadius, 0, 0.04, 6]} />
 				<meshStandardMaterial color='blue' />
 			</mesh>
+			{path.length > 1 && (
+				<Line
+					points={path.map((pos: Vector3) => [pos.x, pos.y, pos.z])} // Convert Vector3 to array
+					color='yellow' // Path color
+					lineWidth={2} // Thickness of the line
+				/>
+			)}
 			{/* Base */}
 			<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorDistance, -0.004]}>
 				<cylinderGeometry args={[rodRadius / 2, rodRadius / 2, rodRadius * 4, 12]} />
