@@ -223,8 +223,8 @@ const RodAndBall: React.FC<RodAndBallProps> = ({
 
 			// Update ball velocity with gravity and air resistance
 			const airResistance = new Vector3(
-				-FBallDrag * velocityRef.current.x * Math.abs(velocityRef.current.x),
-				-FBallDrag * velocityRef.current.y * Math.abs(velocityRef.current.y),
+				-FBallDrag * Math.sign(velocityRef.current.x) * velocityRef.current.x ** 2,
+				-FBallDrag * Math.sign(velocityRef.current.y) * velocityRef.current.y ** 2,
 				0
 			)
 
