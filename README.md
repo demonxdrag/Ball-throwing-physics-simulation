@@ -1,3 +1,11 @@
+# Ball throwing physics simulator
+This is a repo containing 2 simulators, a theoretical one using formulae and an iterative one calculating the derivative of each component given a precision % that is determined by the speed of the simulation.
+
+You can see the full specification for the simulator [here](./README-Asessment.md).
+
+![Simulation Preview](./assets/video.gif)
+
+## Logic
 My logic on solving this problems goes as follows:
 
 The first step is to know the properties of the elements in the system, considering the material properties and dimensions I can get the weight of both the ball and the rod by applying the following formula:
